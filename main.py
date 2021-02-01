@@ -3,8 +3,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from joblib import load
-from sklearn.ensemble import RandomForestRegressor
 
 import os
 import re
@@ -14,7 +12,7 @@ app = FastAPI()
 
 def check_price(h:int=None, d:datetime=None):
 
-    reg = load('ml/clf.joblib')
+    reg = load('ml/model.joblib')
     data_input=[[h,d]]
     price=reg.predict(data_input)
     return "The car you choose has an estimated price of ${}".format(price)
