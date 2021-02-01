@@ -15,7 +15,7 @@ app = FastAPI()
 def check_price(h:int=None, d:datetime=None):
 
     reg = load('ml/clf.joblib')
-    data_input=[[hp,d]]
+    data_input=[[h,d]]
     price=reg.predict(data_input)
     return "The car you choose has an estimated price of ${}".format(price)
     
