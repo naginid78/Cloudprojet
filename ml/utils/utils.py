@@ -41,7 +41,7 @@ class FeatureRecipe:
             if (Price >= 0 and Price < 15):
                 return '0 - 15'
             if (Price >= 15 and Price < 30):
-                return '15 - 30'
+                return "15 - 30"
             if (Price >= 30 and Price < 45):
                 return '30 - 45'
         self.data['echelle_de_prix'] = self.data.apply(lambda x:getrange(x['Price']),axis = 1)
@@ -56,7 +56,7 @@ class FeatureRecipe:
                 return '197 - 276'
         self.data['echelle_de_chevaux'] = self.data.apply(lambda x:getrangeh(x['Horsepower']),axis = 1)
         label_encoder = preprocessing.LabelEncoder()
-        for col in ['Manufacturer','Model','Vehicle_type']:
+        for col in ['Manufacturer','Model','Vehicle_type','echelle_de_prix','echelle_de_chevaux']:
             self.data[col] = self.data[col].astype('category') 
             self.data[col] = label_encoder.fit_transform(self.data[col])
 
@@ -157,6 +157,8 @@ import sklearn as skn
 import matplotlib as plt
 from sklearn.model_selection import train_test_split
 from sklearn import linear_model
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error
 
 class FeatureExtractor:
     """
@@ -198,6 +200,7 @@ class FeatureExtractor:
         print("FeatureExtractor processing done !\n")
         return self.X_train, self.X_test, self.y_train, self.y_test
 
+from joblib import dump,load
 
 
 class ModelBuilder:
@@ -223,10 +226,8 @@ class ModelBuilder:
         return self.line_reg.predict(X)
 
     def save_model(self, path:str):
-
-        #with the format : 'model_{}_{}'.format(date)
-        #joblib.dump(self, path, 3)
-        pass
+        dump(self.line_reg,path+"/model.joblib",3)
+        self.save = True
 
     def predict_from_dump(self, X) -> np.ndarray:
         pass
