@@ -15,7 +15,7 @@ class DataHandling:
 
     def get_data(self):
         print("Loading data from local file...")
-        self.data=pd.read_csv("../data/car_sales.csv")
+        self.data=pd.read_csv("..\data\Car_sales.csv")
         print("Dataset shape : {} lines, {} columns".format(self.data.shape[0],self.data.shape[1]))
         print("Data loaded from local file !")
 
@@ -36,14 +36,14 @@ class FeatureRecipe:
         print("Initialization done !")
 
     def convert_and_encode(self):
-        def getrange(Price):
-            if (Price >= 0 and Price < 15):
+        def getrange(Price_in_thousands):
+            if (Price_in_thousands >= 0 and Price_in_thousands < 15):
                 return '0 - 15'
-            if (Price >= 15 and Price < 30):
+            if (Price_in_thousands >= 15 and Price_in_thousands < 30):
                 return '15 - 30'
-            if (Price >= 30 and Price < 45):
+            if (Price_in_thousands >= 30 and Price_in_thousands < 45):
                 return '30 - 45'
-        self.data['echelle_de_prix'] = data.apply(lambda x:getrange(x['Price_in_thousands']),axis = 1)
+        self.data['echelle_de_prix'] = self.data.apply(lambda x:getrange(x['Price_in_thousands']),axis = 1)
         def getrangeh(Horsepower):
             if (Horsepower >= 92 and Horsepower < 127):
                 return '92 - 127'
@@ -53,7 +53,7 @@ class FeatureRecipe:
                 return '162 - 197'
             if (Horsepower >= 197 and Horsepower < 276):
                 return '197 - 276'
-        data['echelle_de_chevaux'] = data.apply(lambda x:getrangeh(x['Horsepower']),axis = 1)
+        self.data['echelle_de_chevaux'] = self.data.apply(lambda x:getrangeh(x['Horsepower']),axis = 1)
 
 
     def separate_variable_types(self) -> None:
@@ -76,13 +76,13 @@ class FeatureRecipe:
         """
         print("Dropping useless features and observations...")
         # Dropping observations with price == 0
-        self.data.drop(data[data['Price_in_thousands'] == 0].index, inplace=True)
+        self.data.drop(self.data[self.data['Price_in_thousands'] == 0].index, inplace=True)
         # Dropping duplicates null features observations
         self.data.dropna(inplace=True,axis=0)
         # Dropping extreme observations
-        self.data.drop(data[data['Horsepower'] >= 305].index,inplace=True)
-        self.data.drop(data[data['Sales_in_thousands'] >= 150].index,inplace=True)
-        self.data.drop(data[data['Price_in_thousands'] >= 45].index,inplace=True)
+        self.data.drop(self.data[self.data['Horsepower'] >= 305].index,inplace=True)
+        self.data.drop(self.data[self.data['Sales_in_thousands'] >= 150].index,inplace=True)
+        self.data.drop(self.data[self.data['Price_in_thousands'] >= 45].index,inplace=True)
         Q1 = self.data.quantile(0.25)
         Q3 = self.data.quantile(0.75)
         IQR = Q3 - Q1
@@ -148,7 +148,7 @@ class FeatureRecipe:
         print("Processed dataset shape : {} lines, {} columns".format(self.data.shape[0],self.data.shape[1]))
         print("FeatureRecipe processing done !\n")
 
-
+import sklearn
 from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -174,7 +174,7 @@ class FeatureExtractor:
         print("Extracting selected columns...")
         for col in self.flist:
             if col in self.data:
-                self.df.drop(col, axis=1, inplace=True)
+                self.data.drop(col, axis=1, inplace=True)
         print("Selected columns extracted ! \n")
 
     def splitting(self, size:float,rng:int, y:str):
@@ -188,6 +188,12 @@ class FeatureExtractor:
         self.splitting(0.3,42,'FEATURE')
         print("done processing Feature Extractor")
         return self.X_train, self.X_test, self.y_train, self.y_test
+    def split_data(self,split:float):
+        self.extractor()
+        self.splitting(split,42,'Price_in_thousands')
+        print("FeatureExtractor processing done !\n")
+        return self.X_train, self.X_test, self.y_train, self.y_test
+
 
 
 class ModelBuilder:
