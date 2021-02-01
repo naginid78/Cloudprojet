@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-
+from sklearn import preprocessing
 class DataHandling:
     """
         Getting data from local csv file
@@ -16,6 +16,7 @@ class DataHandling:
     def get_data(self):
         print("Loading data from local file...")
         self.data=pd.read_csv("..\data\Car_sales.csv")
+        self.data=self.data.rename(columns={'Price_in_thousands':'Price'})
         print("Dataset shape : {} lines, {} columns".format(self.data.shape[0],self.data.shape[1]))
         print("Data loaded from local file !")
 
@@ -36,14 +37,14 @@ class FeatureRecipe:
         print("Initialization done !")
 
     def convert_and_encode(self):
-        def getrange(Price_in_thousands):
-            if (Price_in_thousands >= 0 and Price_in_thousands < 15):
+        def getrange(Price):
+            if (Price >= 0 and Price < 15):
                 return '0 - 15'
-            if (Price_in_thousands >= 15 and Price_in_thousands < 30):
+            if (Price >= 15 and Price < 30):
                 return '15 - 30'
-            if (Price_in_thousands >= 30 and Price_in_thousands < 45):
+            if (Price >= 30 and Price < 45):
                 return '30 - 45'
-        self.data['echelle_de_prix'] = self.data.apply(lambda x:getrange(x['Price_in_thousands']),axis = 1)
+        self.data['echelle_de_prix'] = self.data.apply(lambda x:getrange(x['Price']),axis = 1)
         def getrangeh(Horsepower):
             if (Horsepower >= 92 and Horsepower < 127):
                 return '92 - 127'
@@ -54,6 +55,10 @@ class FeatureRecipe:
             if (Horsepower >= 197 and Horsepower < 276):
                 return '197 - 276'
         self.data['echelle_de_chevaux'] = self.data.apply(lambda x:getrangeh(x['Horsepower']),axis = 1)
+        label_encoder = preprocessing.LabelEncoder()
+        for col in ['Manufacturer','Model','Vehicle_type']:
+            self.data[col] = self.data[col].astype('category') 
+            self.data[col] = label_encoder.fit_transform(self.data[col])
 
 
     def separate_variable_types(self) -> None:
@@ -76,13 +81,13 @@ class FeatureRecipe:
         """
         print("Dropping useless features and observations...")
         # Dropping observations with price == 0
-        self.data.drop(self.data[self.data['Price_in_thousands'] == 0].index, inplace=True)
+        self.data.drop(self.data[self.data['Price'] == 0].index, inplace=True)
         # Dropping duplicates null features observations
         self.data.dropna(inplace=True,axis=0)
         # Dropping extreme observations
         self.data.drop(self.data[self.data['Horsepower'] >= 305].index,inplace=True)
         self.data.drop(self.data[self.data['Sales_in_thousands'] >= 150].index,inplace=True)
-        self.data.drop(self.data[self.data['Price_in_thousands'] >= 45].index,inplace=True)
+        self.data.drop(self.data[self.data['Price'] >= 45].index,inplace=True)
         Q1 = self.data.quantile(0.25)
         Q3 = self.data.quantile(0.75)
         IQR = Q3 - Q1
@@ -148,12 +153,10 @@ class FeatureRecipe:
         print("Processed dataset shape : {} lines, {} columns".format(self.data.shape[0],self.data.shape[1]))
         print("FeatureRecipe processing done !\n")
 
-import sklearn
-from sklearn import preprocessing
-from sklearn.preprocessing import StandardScaler
+import sklearn as skn
+import matplotlib as plt
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error
+from sklearn import linear_model
 
 class FeatureExtractor:
     """
@@ -183,6 +186,7 @@ class FeatureExtractor:
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, self.data[y], test_size=size, random_state=rng)
         print("splitting done")
 
+
     def extract_data(self):
         self.extractor()
         self.splitting(0.3,42,'FEATURE')
@@ -190,7 +194,7 @@ class FeatureExtractor:
         return self.X_train, self.X_test, self.y_train, self.y_test
     def split_data(self,split:float):
         self.extractor()
-        self.splitting(split,42,'Price_in_thousands')
+        self.splitting(split,42,'Price')
         print("FeatureExtractor processing done !\n")
         return self.X_train, self.X_test, self.y_train, self.y_test
 
@@ -205,7 +209,7 @@ class ModelBuilder:
         print("ModelBuilder initialization...")
         self.model_path = model_path
         self.save = save
-        self.line_reg = LinearRegression()
+        self.line_reg = linear_model.LinearRegression()
         print ("Initialization done !")
 
     def train(self, X, y):
